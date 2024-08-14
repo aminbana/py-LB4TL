@@ -6,14 +6,9 @@ from utils import Swish
 
 
 class F(formula.Formula):
+    def __init__(self, T, d_state, approximation_beta, device, id, detailed_str_mode:bool, f:formula.Formula, t_init:int, t_final:int):
+        super().__init__(T, d_state, approximation_beta, device, id, detailed_str_mode)
 
-    PREDICATE_ID = -1
-
-    def __init__(self, T, d_state, approximation_beta, detailed_str_mode:bool, f:formula.Formula, t_init:int, t_final:int):
-        super().__init__(T, d_state, approximation_beta, detailed_str_mode)
-
-        F.PREDICATE_ID += 1
-        self.id = F.PREDICATE_ID
 
         self.f = f
 
@@ -24,6 +19,8 @@ class F(formula.Formula):
         self.t_final = t_final
 
         self.approximation_gate = Swish(beta = self.approximation_beta)
+
+
 
     def detailed_str(self, t:int):
         st = ' ∨ '.join([self.f.detailed_str(t_) for t_ in range(t + self.t_init, t + self.t_final + 1)])
@@ -48,7 +45,7 @@ class F(formula.Formula):
 
         argmax = torch.argmax(v, dim = -1)
 
-        return v[torch.arange(v.shape[0]), argmax], critical_indices[torch.arange(v.shape[0]), argmax]
+        return v[torch.arange(v.shape[0], device=self.device), argmax], critical_indices[torch.arange(v.shape[0]), argmax]
 
 
     def approximate(self, X:torch.Tensor, t:int):

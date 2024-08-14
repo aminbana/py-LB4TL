@@ -19,20 +19,15 @@ def concat_with_sign(numbers):
 
 class LinearPredicate(formula.Formula):
 
-    PREDICATE_ID = -1
-
-    def __init__(self, T, d_state, approximation_beta, detailed_str_mode:bool, t0:int, A:torch.Tensor, b:float):
-        super().__init__(T, d_state, approximation_beta, detailed_str_mode)
+    def __init__(self, T, d_state, approximation_beta, device, id, detailed_str_mode:bool, t0:int, A:torch.Tensor, b:float):
+        super().__init__(T, d_state, approximation_beta, device, id, detailed_str_mode)
         self.A = A.float()
         self.b = float (b)
 
         self.t0 = t0
 
         assert self.A.shape == torch.Size([self.d_state]), "Predicate specification does not match state space dimension"
-
-        LinearPredicate.PREDICATE_ID += 1
-        self.id = LinearPredicate.PREDICATE_ID
-
+        self.A = self.A.to(device)
 
     def detailed_str(self, t:int):
         self._assert_time_bound(t)
@@ -72,7 +67,7 @@ class LinearPredicate(formula.Formula):
 
         t_ = t + self.t0
 
-        return torch.matmul(X[:, t_, :], self.A) + self.b, torch.ones(X.shape[0], dtype = torch.long) * t_
+        return torch.matmul(X[:, t_, :], self.A) + self.b, torch.ones(X.shape[0], dtype = torch.long, device=self.device) * t_
 
     def _assert_input_shape(self, X:torch.Tensor):
         assert X.shape == torch.Size([X.shape[0], self.T, self.d_state]), "Predicate input shape mismatch"

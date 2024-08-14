@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 import torch
 
 class Formula(ABC):
-    def __init__(self, T:int, d_state:int, approximation_beta:float, detailed_str_mode:bool = False):
+    def __init__(self, T:int, d_state:int, approximation_beta:float, device:torch.device, id:int, detailed_str_mode:bool):
         # T is the horizon, i.e., the length of the trajectory
         # d_state is the dimension of the state space
 
@@ -10,6 +10,8 @@ class Formula(ABC):
         self.d_state = d_state
         self.detailed_str_mode = detailed_str_mode
         self.approximation_beta = approximation_beta
+        self.device = device
+        self.id = id
 
     @abstractmethod
     def detailed_str(self, t:int) -> str:

@@ -6,14 +6,8 @@ from utils import Swish
 
 
 class Or(formula.Formula):
-
-    PREDICATE_ID = -1
-
-    def __init__(self, T, d_state, approximation_beta, detailed_str_mode:bool, formulas:List[formula.Formula]):
-        super().__init__(T, d_state, approximation_beta, detailed_str_mode)
-
-        Or.PREDICATE_ID += 1
-        self.id = Or.PREDICATE_ID
+    def __init__(self, T, d_state, approximation_beta, device, id, detailed_str_mode:bool, formulas:List[formula.Formula]):
+        super().__init__(T, d_state, approximation_beta, device, id, detailed_str_mode)
 
         self.formulas = formulas
         assert len(self.formulas) >= 2, "Or operator must have at least two formula"
@@ -43,7 +37,7 @@ class Or(formula.Formula):
 
         argmax = torch.argmax(v, dim = -1)
 
-        return v[torch.arange(v.shape[0]), argmax], critical_indices[torch.arange(v.shape[0]), argmax]
+        return v[torch.arange(v.shape[0], device=self.device), argmax], critical_indices[torch.arange(v.shape[0]), argmax]
 
     def approximate(self, X:torch.Tensor, t:int):
         v = []

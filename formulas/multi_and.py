@@ -3,14 +3,8 @@ from typing import List
 import torch
 
 class And(formula.Formula):
-
-    PREDICATE_ID = -1
-
-    def __init__(self, T, d_state, approximation_beta, detailed_str_mode:bool, formulas:List[formula.Formula]):
-        super().__init__(T, d_state, approximation_beta, detailed_str_mode)
-
-        And.PREDICATE_ID += 1
-        self.id = And.PREDICATE_ID
+    def __init__(self, T, d_state, approximation_beta, device, id, detailed_str_mode:bool, formulas:List[formula.Formula]):
+        super().__init__(T, d_state, approximation_beta, device, id, detailed_str_mode)
 
         self.formulas = formulas
         assert len(self.formulas) >= 2, "And operator must have at least two formula"
@@ -40,7 +34,7 @@ class And(formula.Formula):
 
         argmin = torch.argmin(v, dim = -1)
 
-        return v[torch.arange(v.shape[0]), argmin], critical_indices[torch.arange(v.shape[0]), argmin]
+        return v[torch.arange(v.shape[0], device=self.device), argmin], critical_indices[torch.arange(v.shape[0]), argmin]
 
     def approximate(self, X:torch.Tensor, t:int):
         v = []
