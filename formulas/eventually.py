@@ -13,7 +13,7 @@ class F(formula.Formula):
         self.f = f
 
         assert t_init >= 0, "Initial time must be non-negative"
-        assert t_final > t_init, "Final time must be greater than the initial time"
+        assert t_final >= t_init, "Final time must be greater than the initial time"
 
         self.t_init = t_init
         self.t_final = t_final
