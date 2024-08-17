@@ -31,10 +31,10 @@ start_time = time.time()
 for _ in range(100):
     r = neural_net(x)
 print("--- %s seconds ---" % (time.time() - start_time))
-print("Answer from the neural network: ", r)#.mean())
+print("Answer from the neural network: ", r.mean())
 
 start_time = time.time()
 for _ in range(100):
     r = F.evaluate(x)[0]
 print("--- %s seconds ---" % (time.time() - start_time))
-print("Answer from the formula: ", r)#.mean())
+print("Answer from the formula: ", r.mean())
