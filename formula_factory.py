@@ -8,46 +8,32 @@ from formulas.eventually import F
 from formulas.formula import Formula
 from formulas.not_gate import Not
 
-from typing import List
+from typing import List, Dict
 
 SUPPORTED_FORMULAS = []
 class FormulaFactory:
-    def __init__(self, T, d_state, approximation_beta, device, detailed_str_mode = False):
-        # T is the horizon, i.e., the length of the trajectory
-        # d_state is the dimension of the state space
+    def __init__(self, args:Dict):
 
-        self.T = T
-        self.d_state = d_state
-        self.detailed_str_mode = detailed_str_mode
-        self.approximation_beta = approximation_beta
-        self.device = device
+        self.args = args
 
-        self.linear_predicate_id = -1
-        self.and_id = -1
-        self.or_id = -1
-        self.G_id = -1
-        self.F_id = -1
+        self.linear_predicate_id_ = -1
 
     def LinearPredicate(self, A:torch.Tensor, b:float, t0 = 0):
-       return LinearPredicate(self.T, self.d_state, self.approximation_beta, self.device, id, self.detailed_str_mode, t0, A, b)
+        self.linear_predicate_id_ += 1
+        id_ = self.linear_predicate_id_
+        return LinearPredicate(self.args, id_, A, b, t0)
 
-    def And(self, formulas:List[Formula]):
-        return And(self.T, self.d_state, self.approximation_beta, self.device, id, self.detailed_str_mode, formulas)
+    def And(self, formulas:List[Formula], t0 : int = 0):
+        return And(self.args, formulas, t0)
 
-    def Or(self, formulas:List[Formula]):
-        return Or(self.T, self.d_state, self.approximation_beta, self.device, id, self.detailed_str_mode, formulas)
+    def Or(self, formulas:List[Formula], t0:int = 0):
+        return Or(self.args, formulas, t0)
 
-    def G(self, formula:Formula, t_init:int, t_final:int):
-        return G(self.T, self.d_state, self.approximation_beta, self.device, id, self.detailed_str_mode, formula, t_init, t_final)
+    def G(self, formula:Formula, t_init:int, t_final:int, t0:int = 0):
+        return G(self.args, formula, t0, t_init, t_final)
 
-    def F(self, formula:Formula, t_init:int, t_final:int):
-        return F(self.T, self.d_state, self.approximation_beta, self.device, id, self.detailed_str_mode, formula, t_init, t_final)
+    def F(self, formula:Formula, t_init:int, t_final:int, t0:int = 0):
+        return F(self.args, formula, t0, t_init, t_final)
 
     def Not(self, formula:Formula):
-        return Not(self.T, self.d_state, self.approximation_beta, self.device, id, self.detailed_str_mode, formula)
-
-    # def get_NeuralNet(self, formula:Formula , approximate:bool = False, ):
-    #
-    #     formula.get_neural_net(approximate)
-    #
-    #     return None
+        return Not(self.args, formula)

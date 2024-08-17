@@ -1,37 +1,43 @@
 import formulas.formula as formula
 from typing import List
 import torch
+from formulas.multi_and import And
 
 class G(formula.Formula):
 
-    def __init__(self, T, d_state, approximation_beta, device, id, detailed_str_mode:bool, f:formula.Formula, t_init:int, t_final:int):
-        super().__init__(T, d_state, approximation_beta, device, id, detailed_str_mode)
+    def __init__(self, args, f:formula.Formula, t0:int, t_init:int, t_final:int):
+        super().__init__(args)
 
         self.f = f
 
         assert t_init >= 0, "Initial time must be non-negative"
         assert t_final >= t_init, "Final time must be greater than the initial time"
 
+        self.t0 = t0
         self.t_init = t_init
         self.t_final = t_final
 
         self.approximation_gate = torch.nn.Softplus(beta = self.approximation_beta)
 
-    def detailed_str(self, t:int):
-        st = ' ∧ '.join([self.f.detailed_str(t_) for t_ in range(t + self.t_init, t + self.t_final + 1)])
+    def detailed_str(self):
+        t = self.t0
+        st = ' ∧ '.join([self.f.at(t_).detailed_str() for t_ in range(t + self.t_init, t + self.t_final + 1)])
         return f'({st})'
 
-    def abstract_str(self, t:int):
-        st = ' and '.join([self.f.abstract_str(t_) for t_ in range(t + self.t_init, t + self.t_final + 1)])
-        return f'({st})'
+    def abstract_str(self):
+        t = self.t0
+        st = f'G[{t+self.t_init},{t+self.t_final}]({self.f.abstract_str()})'
+        return st
 
-    def evaluate(self, X, t):
+    def evaluate(self, X):
+
+        t = self.t0
 
         v = []
         critical_indices = []
 
         for t_ in range(t + self.t_init, t + self.t_final + 1):
-            ret = self.f.evaluate(X, t_)
+            ret = self.f.at(t_).evaluate(X)
             v.append(ret[0])
             critical_indices.append(ret[1])
 
@@ -42,15 +48,19 @@ class G(formula.Formula):
 
         return v[torch.arange(v.shape[0], device=self.device), argmin], critical_indices[torch.arange(v.shape[0]), argmin]
 
-    def approximate(self, X:torch.Tensor, t:int):
+    def approximate(self, X:torch.Tensor):
+
+        t = self.t0
+
         v = []
 
         for t_ in range(t + self.t_init, t + self.t_final + 1):
-            ret = self.f.approximate(X, t_)
+            ret = self.f.at(t_).approximate(X)
             v.append(ret)
 
         v = torch.stack(v, dim = -1)
 
+        v_last = None
         while v.shape[-1] > 1:
             is_odd = v.shape[-1] % 2
             if is_odd:
@@ -67,3 +77,32 @@ class G(formula.Formula):
 
 
         return v.squeeze(-1)
+
+
+
+    def parse_to_PropLogic(self):
+        t = self.t0
+
+        new_formulas = []
+        for t_ in range(t + self.t_init, t + self.t_final + 1):
+            new_formulas.append(self.f.at(t_).parse_to_PropLogic())
+
+        while len(new_formulas) > 1:
+            # extract head of the list
+            f1 = new_formulas.pop(0)
+            f2 = new_formulas.pop(0)
+            new_formulas.append(And(self.args, [f1, f2], t0 = 0))
+
+        return new_formulas[0]
+
+    def find_depth(self):
+        assert False, "Call parse_to_PropLogic before calling find_depth to ensure the formula has only and/or operators."
+
+
+    def at(self, t:int):
+        t = t + self.t0
+        return G(self.args, self.f, t, self.t_init, self.t_final)
+
+
+    def fill_neural_net(self, net, expected_layer_to_output:int):
+        assert False, "Call parse_to_PropLogic before calling fill_neural_net to ensure the formula has only and/or operators."

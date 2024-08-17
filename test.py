@@ -1,42 +1,40 @@
 from formula_factory import FormulaFactory
 import torch
-# measure time
 import time
 
-Batch = 100
-T = 300_000
-d = 1
-approximation_beta = 2
+from networks.neural_net_generator import generate_network
 
+T = 40
+d_state = 2
+Batch = 10
+approximation_beta = 200
 device = torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
+detailed_str_mode = False
 
+args = {'T': T, 'd_state': d_state, 'Batch': Batch, 'approximation_beta': approximation_beta, 'device': device, 'detailed_str_mode': detailed_str_mode}
 
-X = torch.randn(Batch, T, d).to(device)
-X.requires_grad = True
+FF = FormulaFactory(args)
 
+p0 = FF.LinearPredicate(torch.tensor([1, -1]), -2, 0)
+p1 = FF.LinearPredicate(torch.tensor([2, 0]), 0., 0)
 
-FF = FormulaFactory(T, d, approximation_beta, device, True)
+and_1 = FF.And([p0.at(0), p1.at(3)])
+and_2 = FF.And([p0.at(1), p1.at(2)])
+F = FF.F(FF.G(FF.Or([FF.Not(p0.at(2)), and_1, and_2]), 0, 25, 2), 2, 3)
 
+neural_net = generate_network(F, approximate=False, beta=approximation_beta).to(args['device'])
+x = torch.randn((Batch, T, d_state), device=args['device'])
 
-p1 = FF.LinearPredicate(torch.tensor([1]).cuda(), -0.1)
-
-F_ = FF.F(
-        FF.G (
-            FF.Not(p1),
-        0, 5),
-    0, 4)
-
+print("Formula:", F)
 
 start_time = time.time()
-
-print(F_.evaluate(X, 0))
-
-robustness = F_.approximate(X, 0).mean()
-print(robustness)
-robustness.backward()
-
+for _ in range(100):
+    r = neural_net(x)
 print("--- %s seconds ---" % (time.time() - start_time))
-#print(X.grad)
+print("Answer from the neural network: ", r)#.mean())
 
-
-
+start_time = time.time()
+for _ in range(100):
+    r = F.evaluate(x)[0]
+print("--- %s seconds ---" % (time.time() - start_time))
+print("Answer from the formula: ", r)#.mean())
