@@ -42,6 +42,27 @@ class FormulaFactory:
 
     def F(self, formula:Formula, t_init:int, t_final:int):
         return F(self.T, self.d_state, self.approximation_beta, self.device, id, self.detailed_str_mode, formula, t_init, t_final)
+    
+    def Ordered(self, formula1:Formula, formula2:Formula, t_init:int, t_final:int):
+        or_list = []
+        for i in range(t_init,t_final):
+            or_list.append( self.And( [ self.F(formula1, i, i) , self.F( formula2, i+1 , t_final) ] ) )
+                         
+        return self.Or(or_list)
+    
+    def Until(self, formula1:Formula, formula2:Formula, t_init:int, t_final:int):
+        or_list = []
+        for i in range(t_init,t_final):
+            or_list.append( self.And( [ self.F(formula1, i, i) , self.G( formula2, i+1 , t_final) ] ) )
+                         
+        return self.Or(or_list)
+    
+    def Release(self, formula1:Formula, formula2:Formula, t_init:int, t_final:int):
+        and_list = []
+        for i in range(t_init,t_final):
+            and_list.append( self.Or( [ self.F(formula1, i, i) , self.G( formula2, i+1 , t_final) ] ) )
+                         
+        return self.And(and_list)
 
     def Not(self, formula:Formula):
         return Not(self.T, self.d_state, self.approximation_beta, self.device, id, self.detailed_str_mode, formula)
