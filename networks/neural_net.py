@@ -29,9 +29,11 @@ class MultiLengthActivation(torch.nn.Module):
 
 
     def forward(self, x):
+        new_x = []
         for a, (i, j) in self.activations:
-            x[:, i:j] = a(x[:, i:j])
-        return x
+            new_x.append(a(x[:, i:j]))
+        return torch.cat(new_x, dim = 1)
+
 class NeuralNetwork(torch.nn.Module):
     def __init__(self, weights:List[torch.Tensor], biases:List[torch.Tensor], activations_list, approximate:bool = False, beta:float = 1.0):
         super(NeuralNetwork, self).__init__()
