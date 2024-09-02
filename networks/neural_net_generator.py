@@ -23,7 +23,7 @@ def organize_tensor_network_sparse(layer_information:Dict, W1_first_dim:int):
     W1_indices = []
     W1_values = []
     for (i, j), value in layer_information['W1'].items():
-        W1_indices.append((i, old_to_new_indices[j].item()))
+        W1_indices.append((i, new_to_old_indices[j].item()))
         W1_values.append(value)
 
     W1_sparse = torch.sparse_coo_tensor(torch.tensor(W1_indices).T, torch.tensor(W1_values), (W1_first_dim, len(activations)), dtype = torch.float32)
@@ -31,7 +31,7 @@ def organize_tensor_network_sparse(layer_information:Dict, W1_first_dim:int):
     W2_indices = []
     W2_values = []
     for (i, j), value in layer_information['W2'].items():
-        W2_indices.append((old_to_new_indices[i].item(), j))
+        W2_indices.append((new_to_old_indices[i].item(), j))
         W2_values.append(value)
 
     W2_sparse = torch.sparse_coo_tensor(torch.tensor(W2_indices).T, torch.tensor(W2_values), (len(activations), layer_information['W2_width']), dtype = torch.float32)
@@ -39,7 +39,7 @@ def organize_tensor_network_sparse(layer_information:Dict, W1_first_dim:int):
     b1_indices = []
     b1_values = []
     for i, value in layer_information['b1'].items():
-        b1_indices.append(old_to_new_indices[i].item())
+        b1_indices.append(new_to_old_indices[i].item())
         b1_values.append(value)
 
     b1_sparse = torch.sparse_coo_tensor(torch.tensor(b1_indices).unsqueeze(0), torch.tensor(b1_values), (len(activations),), dtype = torch.float32)
