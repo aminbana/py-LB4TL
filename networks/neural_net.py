@@ -34,16 +34,35 @@ class MultiLengthActivation(torch.nn.Module):
             new_x.append(a(x[:, i:j]))
         return torch.cat(new_x, dim = 1)
 
+class SparseLinearLayer(torch.nn.Module):
+    def __init__(self, W, b):
+        super(SparseLinearLayer, self).__init__()
+        W_ = W
+        b_ = b.to_dense().unsqueeze(0)
+
+        self.register_buffer('W', W_)
+        self.register_buffer('b', b_)
+
+    def forward(self, x):
+        return x @ self.W + self.b
+
 class NeuralNetwork(torch.nn.Module):
-    def __init__(self, weights:List[torch.Tensor], biases:List[torch.Tensor], activations_list, approximate:bool = False, beta:float = 1.0):
+    def __init__(self, weights:List[torch.Tensor], biases:List[torch.Tensor], activations_list, approximate:bool = False, beta:float = 1.0, sparse = False):
         super(NeuralNetwork, self).__init__()
         num_layers = len(weights)
         layers = torch.nn.ModuleList()
         assert weights[-1].shape[-1] == 1, f'Output layer must have 1 output, got {weights[-1].shape[-1]}'
+
+        self.is_sparse = sparse
+
         for i in range(num_layers):
-            linear_layer = torch.nn.Linear(weights[i].shape[0], weights[i].shape[1])
-            linear_layer.weight.data = weights[i].T
-            linear_layer.bias.data = biases[i]
+            if not sparse:
+                linear_layer = torch.nn.Linear(weights[i].shape[0], weights[i].shape[1])
+                linear_layer.weight.data = weights[i].T
+                linear_layer.bias.data = biases[i]
+            else:
+                linear_layer = SparseLinearLayer(weights[i], biases[i])
+
             layers.append(linear_layer)
             if i < num_layers - 1:
                 activation = MultiLengthActivation(activations_list[i], approximate = approximate, beta = beta)
