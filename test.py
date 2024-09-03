@@ -74,11 +74,13 @@ for _ in range(1):
 print(res)
 print("--- Sparse time: %s seconds ---" % (time.time() - t_start))
 
-neural_net_soft_sparse.save_to_disk("neural_net_soft_sparse.pth")
 
+neural_net_soft_sparse = generate_network(formula, approximate=True , beta=5, sparse=True).to(device)
+neural_net_soft_sparse.save_to_disk("neural_net_soft_sparse.pth")
+print(" --------- Saved To disk -------- ")
 loaded_net = NeuralNetwork.load_from_disk("neural_net_soft_sparse.pth").to(device)
 print(loaded_net(x))
-print(" ----------------- ")
+print(" --------- Loaded from disk -------- ")
 
 # neural_net_exact_sparse = generate_network(formula, approximate=False , beta=1, sparse=True).to(device)
 # for _ in range(1):
