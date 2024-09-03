@@ -32,7 +32,8 @@ class MultiLengthActivation(torch.nn.Module):
         new_x = []
         for a, (i, j) in self.activations:
             new_x.append(a(x[:, i:j]))
-        return torch.cat(new_x, dim = 1)
+        new_x = torch.cat(new_x, dim = 1)
+        return new_x
 
 class SparseLinearLayer(torch.nn.Module):
     def __init__(self, W, b):
@@ -53,8 +54,6 @@ class NeuralNetwork(torch.nn.Module):
         layers = torch.nn.ModuleList()
         assert weights[-1].shape[-1] == 1, f'Output layer must have 1 output, got {weights[-1].shape[-1]}'
 
-        self.is_sparse = sparse
-
         for i in range(num_layers):
             if not sparse:
                 linear_layer = torch.nn.Linear(weights[i].shape[0], weights[i].shape[1])
@@ -70,12 +69,21 @@ class NeuralNetwork(torch.nn.Module):
 
         self.layers = torch.nn.Sequential(*layers)
 
+        self.all_inputs = [weights, biases, activations_list, approximate, beta, sparse]
+
 
     def forward(self, x):
         assert len(x.shape) == 3, f'Input shape must be 3D, got {len(x.shape)}D'
         x = x.flatten(start_dim = 1)
         return self.layers(x).squeeze(-1)
 
+    def save_to_disk(self, path:str):
+        torch.save(self.all_inputs, path)
+
+    @staticmethod
+    def load_from_disk(path:str):
+        all_inputs = torch.load(path)
+        return NeuralNetwork(*all_inputs)
 
 
 

@@ -2,14 +2,14 @@
 from formula_factory import FormulaFactory
 import torch
 from networks.neural_net_generator import generate_network
-
+from networks.neural_net import NeuralNetwork
 
 H = 1500  # horizon
 
 
 print("The LB4TL is under construction.")
 
-num_episodes = 5
+num_episodes = 10
 beta = 15
 detailed_str_mode = False
 device = 'cuda'
@@ -64,32 +64,45 @@ formula = FF.And([
 import time
 x = torch.randn((num_episodes, H+1, d_state), device=args['device'], requires_grad=True)
 
+neural_net_soft_sparse = generate_network(formula, approximate=True , beta=5, sparse=True).to(device)
 t_start = time.time()
 
-neural_net_soft_sparse = generate_network(formula, approximate=True , beta=15, sparse=True).to(device)
-for _ in range(100):
+for _ in range(1):
     x.grad = None
     res = neural_net_soft_sparse(x)
     res.mean().backward()
 print(res)
-print("--- %s seconds ---" % (time.time() - t_start))
+print("--- Sparse time: %s seconds ---" % (time.time() - t_start))
 
+neural_net_soft_sparse.save_to_disk("neural_net_soft_sparse.pth")
+
+# neural_net_exact_sparse = generate_network(formula, approximate=False , beta=1, sparse=True).to(device)
+# for _ in range(1):
+#     x.grad = None
+#     res = neural_net_soft_sparse(x)
+#     res.mean().backward()
+# print(res)
+# print("--- %s seconds ---" % (time.time() - t_start))
+
+print(" ----------------- ")
+
+neural_net_soft = generate_network(formula, approximate=True , beta=5, sparse=False).to(device)
 t_start = time.time()
-neural_net_soft = generate_network(formula, approximate=True , beta=15, sparse=False).to(device)
-for _ in range(100):
+
+for _ in range(1):
     x.grad = None
     res = neural_net_soft(x)
     res.mean().backward()
 
 print(res)
-print("--- %s seconds ---" % (time.time() - t_start))
+print("--- Dense time %s seconds ---" % (time.time() - t_start))
 
-t_start = time.time()
+neural_net_soft.save_to_disk("neural_net_soft.pth")
 
-neural_net_soft_slow = generate_network(formula, approximate=True , beta=15, sparse=False, fast_build=False).to(device)
-for _ in range(100):
-    x.grad = None
-    res = neural_net_soft_slow(x)
-    res.mean().backward()
-print(res)
-print("--- %s seconds ---" % (time.time() - t_start))
+loaded_net = NeuralNetwork.load_from_disk("neural_net_soft_sparse.pth").to(device)
+print(loaded_net(x))
+print(" ----------------- ")
+
+loaded_net_dense = NeuralNetwork.load_from_disk("neural_net_soft.pth").to(device)
+print(loaded_net_dense(x))
+print(" ----------------- ")
